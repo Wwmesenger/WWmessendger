@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -28,7 +29,7 @@
         .search-input { flex: 1; padding: 10px 16px; background: #1a1a1a; border: 1px solid #2c2c2c; color: white; border-radius: 24px; outline: none; }
         .search-btn { background: #4caf50; border: none; color: white; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 20px; }
         .user-profile { padding: 16px 20px; display: flex; align-items: center; gap: 14px; background: #080808; border-bottom: 1px solid #1f1f1f; cursor: pointer; }
-        .avatar { width: 52px; height: 52px; border-radius: 50%; background: #202020; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; overflow: hidden; flex-shrink: 0; }
+        .avatar { width: 52px; height: 52px; border-radius: 50%; background: #202020; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; overflow: hidden; flex-shrink: 0; position: relative; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
         .online-dot { width: 12px; height: 12px; border-radius: 50%; background: #4caf50; position: absolute; bottom: 2px; right: 2px; border: 2px solid #0c0c0c; }
         .user-info { flex: 1; min-width: 0; }
@@ -36,7 +37,7 @@
         .user-bio { font-size: 11px; color: #888; margin-top: 2px; }
         .user-email { font-size: 10px; color: #666; margin-top: 2px; }
         .chats-list { flex: 1; overflow-y: auto; }
-        .chat-item { padding: 14px 20px; display: flex; align-items: center; gap: 14px; cursor: pointer; border-bottom: 1px solid #151515; position: relative; }
+        .chat-item { padding: 14px 20px; display: flex; align-items: center; gap: 14px; cursor: pointer; border-bottom: 1px solid #151515; }
         .chat-item:hover { background: #141414; }
         .chat-item.active { background: #1e2a1e; border-left: 3px solid #4caf50; }
         .chat-avatar { width: 48px; height: 48px; border-radius: 50%; background: #202020; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; overflow: hidden; position: relative; flex-shrink: 0; }
@@ -59,14 +60,22 @@
         .message-input { flex: 1; padding: 12px 18px; background: #1a1a1a; border: 1px solid #2c2c2c; color: white; border-radius: 32px; outline: none; }
         .send-btn { background: #4caf50; border: none; color: white; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 20px; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
-        .modal-content { background: #131313; padding: 32px; border-radius: 32px; width: 460px; max-width: 90%; }
+        .modal-content { background: #131313; padding: 32px; border-radius: 32px; width: 460px; max-width: 90%; max-height: 85vh; overflow-y: auto; }
         .modal-content h2 { margin-bottom: 20px; font-size: 24px; }
-        .modal-content input { width: 100%; padding: 14px; margin: 10px 0; background: #1a1a1a; border: 1px solid #2c2c2c; color: white; border-radius: 18px; font-size: 14px; }
+        .modal-content input, .modal-content textarea { width: 100%; padding: 14px; margin: 10px 0; background: #1a1a1a; border: 1px solid #2c2c2c; color: white; border-radius: 18px; font-size: 14px; }
         .modal-content button { width: 100%; padding: 14px; margin-top: 16px; background: #4caf50; border: none; color: white; border-radius: 30px; cursor: pointer; font-size: 16px; font-weight: 600; }
         .modal-content button.secondary { background: #3a3a3a; }
+        .modal-content button.danger { background: #c42e2e; }
+        .avatar-upload { text-align: center; margin: 20px 0; }
+        .avatar-preview { width: 100px; height: 100px; border-radius: 50%; background: #2a2a2a; margin: 0 auto 15px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .file-input-label { background: #4caf50; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 12px; display: inline-block; }
         .my-id-display { background: #1a1a1a; padding: 12px; border-radius: 16px; margin: 15px 0; word-break: break-all; font-size: 12px; text-align: center; }
         .no-items { text-align: center; color: #666; padding: 40px 20px; font-size: 14px; }
         .typing-indicator { font-size: 12px; color: #888; padding: 8px 20px; font-style: italic; }
+        .search-results { background: #1a1a1a; border-radius: 12px; margin-top: 8px; max-height: 200px; overflow-y: auto; }
+        .search-result-item { padding: 10px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #2c2c2c; }
+        .search-result-item:hover { background: #2a2a2a; }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #0c0c0c; }
         ::-webkit-scrollbar-thumb { background: #4caf50; border-radius: 10px; }
@@ -132,21 +141,21 @@
     const auth = firebase.auth();
     const rtdb = firebase.database();
     const db = firebase.firestore();
+    const storage = firebase.storage();
     
     // ==================== ПЕРЕМЕННЫЕ ====================
     let currentUser = null;
     let currentUserData = null;
     let currentChatId = null;
     let currentChatPeerId = null;
-    let chats = []; // { chatId, peerId, peerName, peerEmail, lastMessage, lastTime }
-    let messages = new Map(); // chatId -> messages[]
+    let chats = [];
+    let messagesMap = new Map();
     let onlineStatuses = new Map();
+    let usersCache = new Map();
     let typingRef = null;
     let typingTimeout = null;
-    let lastActivityRef = null;
     let presenceInterval = null;
     let unsubscribeMessages = null;
-    let usersCache = new Map(); // uid -> { name, email }
     
     // ==================== ВСПОМОГАТЕЛЬНЫЕ ====================
     function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
@@ -165,6 +174,7 @@
                 <div id="loginForm">
                     <input type="email" id="loginEmail" placeholder="Email">
                     <input type="password" id="loginPassword" placeholder="Пароль">
+                    <button id="forgotPasswordBtn" class="secondary" style="background:#3a3a3a;">🔑 Забыли пароль?</button>
                     <button id="loginBtn">🔑 Войти</button>
                 </div>
                 <div id="registerForm" style="display:none;">
@@ -186,12 +196,27 @@
         loginTab.onclick = () => { loginTab.style.background = '#4caf50'; registerTab.style.background = '#3a3a3a'; loginForm.style.display = 'block'; registerForm.style.display = 'none'; };
         registerTab.onclick = () => { registerTab.style.background = '#4caf50'; loginTab.style.background = '#3a3a3a'; loginForm.style.display = 'none'; registerForm.style.display = 'block'; };
         
+        modal.querySelector('#forgotPasswordBtn').onclick = async () => {
+            const email = modal.querySelector('#loginEmail').value.trim();
+            if (!email) { alert("Введите email"); return; }
+            try {
+                await auth.sendPasswordResetEmail(email);
+                alert("✅ Письмо для сброса пароля отправлено!");
+            } catch(err) { alert("Ошибка: " + err.message); }
+        };
+        
         modal.querySelector('#loginBtn').onclick = async () => {
             const email = modal.querySelector('#loginEmail').value.trim();
             const password = modal.querySelector('#loginPassword').value;
             if (!email || !password) { alert("Заполните поля"); return; }
             try {
                 const result = await auth.signInWithEmailAndPassword(email, password);
+                if (!result.user.emailVerified) {
+                    alert("⚠️ Подтвердите email! Письмо отправлено повторно.");
+                    await result.user.sendEmailVerification();
+                    await auth.signOut();
+                    return;
+                }
                 currentUser = result.user;
                 await loadUserData();
                 modal.remove();
@@ -207,17 +232,17 @@
             if (password.length < 6) { alert("Пароль минимум 6 символов"); return; }
             try {
                 const result = await auth.createUserWithEmailAndPassword(email, password);
-                currentUser = result.user;
-                // Сохраняем в RTDB
-                await rtdb.ref(`users/${currentUser.uid}`).set({
+                await result.user.sendEmailVerification();
+                await rtdb.ref(`users/${result.user.uid}`).set({
                     email: email,
                     name: name,
                     status: 'offline',
-                    lastSeen: Date.now()
+                    lastSeen: Date.now(),
+                    avatarUrl: null,
+                    bio: ''
                 });
-                currentUserData = { name: name, email: email };
-                modal.remove();
-                initApp();
+                alert("✅ Регистрация успешна! Подтвердите email и войдите.");
+                await auth.signOut();
             } catch(err) { alert("Ошибка: " + err.message); }
         };
         
@@ -229,45 +254,38 @@
         if (snapshot.exists()) {
             currentUserData = snapshot.val();
         } else {
-            currentUserData = { name: currentUser.email.split('@')[0], email: currentUser.email };
-            await rtdb.ref(`users/${currentUser.uid}`).set({
-                email: currentUser.email,
-                name: currentUserData.name,
-                status: 'offline',
-                lastSeen: Date.now()
-            });
+            currentUserData = { name: currentUser.email.split('@')[0], email: currentUser.email, avatarUrl: null, bio: '' };
+            await rtdb.ref(`users/${currentUser.uid}`).set(currentUserData);
         }
         updateProfileUI();
     }
     
+    // ==================== ЗАГРУЗКА АВАТАРА ====================
+    async function uploadAvatar(file) {
+        if (!file) return null;
+        const storageRef = storage.ref(`avatars/${currentUser.uid}`);
+        await storageRef.put(file);
+        const url = await storageRef.getDownloadURL();
+        await rtdb.ref(`users/${currentUser.uid}`).update({ avatarUrl: url });
+        currentUserData.avatarUrl = url;
+        updateProfileUI();
+        return url;
+    }
+    
     // ==================== СТАТУС ОНЛАЙН ====================
     function startPresence() {
-        // Обновляем статус при загрузке
         updateStatus('online');
-        
-        // Обновляем каждые 30 секунд (активность)
         if (presenceInterval) clearInterval(presenceInterval);
-        presenceInterval = setInterval(() => {
-            updateStatus('online');
-        }, 30000);
+        presenceInterval = setInterval(() => updateStatus('online'), 30000);
+        window.addEventListener('beforeunload', () => updateStatus('offline'));
         
-        // При закрытии страницы
-        window.addEventListener('beforeunload', () => {
-            updateStatus('offline');
-        });
-        
-        // Слушаем статусы других пользователей
         rtdb.ref('users').on('value', (snapshot) => {
             const users = snapshot.val() || {};
             for (const [uid, data] of Object.entries(users)) {
                 if (uid !== currentUser.uid) {
-                    const isOnline = data.status === 'online';
-                    const lastSeen = data.lastSeen || 0;
-                    const now = Date.now();
-                    // Если последнее сообщение было более 5 минут назад (300000 мс)
-                    const isActive = isOnline && (now - lastSeen < 300000);
-                    onlineStatuses.set(uid, isActive);
-                    usersCache.set(uid, { name: data.name, email: data.email });
+                    const isOnline = data.status === 'online' && (Date.now() - (data.lastSeen || 0) < 300000);
+                    onlineStatuses.set(uid, isOnline);
+                    usersCache.set(uid, { name: data.name, email: data.email, avatarUrl: data.avatarUrl });
                 }
             }
             renderChatsList();
@@ -275,14 +293,10 @@
     }
     
     async function updateStatus(status) {
-        const now = Date.now();
-        await rtdb.ref(`users/${currentUser.uid}`).update({
-            status: status,
-            lastSeen: now
-        });
+        await rtdb.ref(`users/${currentUser.uid}`).update({ status: status, lastSeen: Date.now() });
     }
     
-    // ==================== ЗАГРУЗКА ЧАТОВ ИЗ FIRESTORE ====================
+    // ==================== ЧАТЫ FIRESTORE ====================
     async function loadUserChats() {
         const userChatsRef = db.collection('users').doc(currentUser.uid);
         const doc = await userChatsRef.get();
@@ -301,35 +315,27 @@
                         peerId: peerId,
                         peerName: peerInfo.name,
                         peerEmail: peerInfo.email,
+                        peerAvatar: peerInfo.avatarUrl,
                         lastMessage: chatData.lastMessage || '',
-                        lastTime: chatData.lastTime || ''
+                        lastTime: chatData.lastTime || 0
                     });
                 }
             }
-            // Сортируем по последнему сообщению
             chats.sort((a,b) => (b.lastTime || 0) - (a.lastTime || 0));
         }
         renderChatsList();
     }
     
     async function createOrGetChat(peerId) {
-        // Проверяем существующий чат
         const userChatsRef = db.collection('users').doc(currentUser.uid);
         const userDoc = await userChatsRef.get();
         if (userDoc.exists) {
             const data = userDoc.data();
             for (const [key, chatId] of Object.entries(data)) {
                 const chatDoc = await db.collection('chats').doc(chatId).get();
-                if (chatDoc.exists) {
-                    const participants = chatDoc.data().participants;
-                    if (participants && participants.includes(peerId)) {
-                        return chatId;
-                    }
-                }
+                if (chatDoc.exists && chatDoc.data().participants.includes(peerId)) return chatId;
             }
         }
-        
-        // Создаём новый чат
         const chatId = `chat_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
         await db.collection('chats').doc(chatId).set({
             participants: [currentUser.uid, peerId],
@@ -337,20 +343,11 @@
             lastMessage: '',
             lastTime: 0
         });
-        
-        // Добавляем в список чатов обоих пользователей
-        await db.collection('users').doc(currentUser.uid).set({
-            [peerId]: chatId
-        }, { merge: true });
-        
-        await db.collection('users').doc(peerId).set({
-            [currentUser.uid]: chatId
-        }, { merge: true });
-        
+        await db.collection('users').doc(currentUser.uid).set({ [peerId]: chatId }, { merge: true });
+        await db.collection('users').doc(peerId).set({ [currentUser.uid]: chatId }, { merge: true });
         return chatId;
     }
     
-    // ==================== СООБЩЕНИЯ ====================
     async function sendMessage() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
@@ -364,25 +361,19 @@
             time: new Date().toLocaleTimeString().slice(0,5)
         };
         
-        // Сохраняем в Firestore
-        const chatRef = db.collection('chats').doc(currentChatId);
-        await chatRef.collection('messages').add(message);
-        await chatRef.update({
-            lastMessage: text,
-            lastTime: Date.now()
-        });
-        
+        await db.collection('chats').doc(currentChatId).collection('messages').add(message);
+        await db.collection('chats').doc(currentChatId).update({ lastMessage: text, lastTime: Date.now() });
         input.value = '';
-        updateStatus('online'); // Обновляем активность
+        updateStatus('online');
     }
     
-    function openChat(chatId, peerId, peerName) {
+    function openChat(chatId, peerId, peerName, peerAvatar) {
         if (unsubscribeMessages) unsubscribeMessages();
         currentChatId = chatId;
         currentChatPeerId = peerId;
         
         document.getElementById('chatName').innerText = peerName;
-        document.getElementById('chatAvatar').innerHTML = peerName.charAt(0).toUpperCase();
+        document.getElementById('chatAvatar').innerHTML = peerAvatar ? `<img src="${peerAvatar}">` : peerName.charAt(0).toUpperCase();
         
         const isOnline = onlineStatuses.get(peerId) || false;
         document.getElementById('peerStatus').innerHTML = isOnline ? '🟢 В сети' : '⚪ Не в сети';
@@ -390,7 +381,6 @@
         document.getElementById('messageInput').disabled = false;
         document.getElementById('sendBtn').disabled = false;
         
-        // Слушаем сообщения в реальном времени
         unsubscribeMessages = db.collection('chats').doc(chatId).collection('messages')
             .orderBy('timestamp', 'asc')
             .onSnapshot((snapshot) => {
@@ -399,19 +389,15 @@
                 renderMessages(msgs);
             });
         
-        // Слушаем статус печатания из RTDB
         if (typingRef) typingRef.off();
         typingRef = rtdb.ref(`typing/${chatId}/${peerId}`);
         typingRef.on('value', (snapshot) => {
-            const isTyping = snapshot.val();
-            const indicator = document.getElementById('typingIndicator');
-            if (isTyping) {
-                indicator.style.display = 'block';
-                indicator.innerHTML = `${peerName} печатает...`;
-                setTimeout(() => { indicator.style.display = 'none'; }, 2000);
+            if (snapshot.val()) {
+                document.getElementById('typingIndicator').style.display = 'block';
+                document.getElementById('typingIndicator').innerHTML = `${peerName} печатает...`;
+                setTimeout(() => document.getElementById('typingIndicator').style.display = 'none', 2000);
             }
         });
-        
         renderChatsList();
     }
     
@@ -421,9 +407,7 @@
         typingRefSend.set(true);
         typingRefSend.onDisconnect().remove();
         if (typingTimeout) clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {
-            typingRefSend.remove();
-        }, 2000);
+        typingTimeout = setTimeout(() => typingRefSend.remove(), 2000);
     }
     
     function renderMessages(msgs) {
@@ -443,18 +427,15 @@
         container.scrollTop = container.scrollHeight;
     }
     
-    // ==================== ПОИСК ПОЛЬЗОВАТЕЛЕЙ ====================
+    // ==================== ПОИСК ====================
     async function searchUsers(query) {
         if (!query.trim()) return [];
         const snapshot = await rtdb.ref('users').once('value');
         const users = snapshot.val() || {};
         const results = [];
         for (const [uid, data] of Object.entries(users)) {
-            if (uid !== currentUser.uid) {
-                if (data.email.toLowerCase().includes(query.toLowerCase()) || 
-                    data.name.toLowerCase().includes(query.toLowerCase())) {
-                    results.push({ uid, name: data.name, email: data.email });
-                }
+            if (uid !== currentUser.uid && (data.email.toLowerCase().includes(query.toLowerCase()) || data.name.toLowerCase().includes(query.toLowerCase()))) {
+                results.push({ uid, name: data.name, email: data.email, avatarUrl: data.avatarUrl });
             }
         }
         return results;
@@ -463,24 +444,20 @@
     async function renderSearchResults(query) {
         const results = await searchUsers(query);
         const container = document.getElementById('searchResults');
-        if (!query.trim() || results.length === 0) {
-            container.innerHTML = '';
-            return;
-        }
+        if (!query.trim() || results.length === 0) { container.innerHTML = ''; return; }
         container.innerHTML = results.map(user => `
-            <div class="search-result-item" data-user-id="${user.uid}" style="padding:10px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;border-bottom:1px solid #1f1f1f;">
-                <div class="avatar" style="width:40px;height:40px;">${user.name.charAt(0).toUpperCase()}</div>
+            <div class="search-result-item" data-user-id="${user.uid}">
+                <div class="avatar" style="width:40px;height:40px;">${user.avatarUrl ? `<img src="${user.avatarUrl}">` : user.name.charAt(0).toUpperCase()}</div>
                 <div><div>${escapeHtml(user.name)}</div><div style="font-size:11px;color:#666;">${user.email}</div></div>
             </div>
         `).join('');
-        
         document.querySelectorAll('.search-result-item').forEach(el => {
             el.onclick = async () => {
                 const peerId = el.dataset.userId;
+                const peerInfo = usersCache.get(peerId);
                 const chatId = await createOrGetChat(peerId);
-                const peerInfo = usersCache.get(peerId) || { name: 'Пользователь', email: '' };
                 await loadUserChats();
-                openChat(chatId, peerId, peerInfo.name);
+                openChat(chatId, peerId, peerInfo?.name || 'Пользователь', peerInfo?.avatarUrl);
                 document.getElementById('searchInput').value = '';
                 container.innerHTML = '';
             };
@@ -490,10 +467,7 @@
     // ==================== UI ====================
     function renderChatsList() {
         const container = document.getElementById('chatsList');
-        if (chats.length === 0) {
-            container.innerHTML = '<div class="no-items">✨ Нет чатов<br>Найдите друга по email</div>';
-            return;
-        }
+        if (chats.length === 0) { container.innerHTML = '<div class="no-items">✨ Нет чатов<br>Найдите друга по email</div>'; return; }
         container.innerHTML = '';
         for (const chat of chats) {
             const isOnline = onlineStatuses.get(chat.peerId) || false;
@@ -501,7 +475,7 @@
             div.className = `chat-item ${currentChatId === chat.chatId ? 'active' : ''}`;
             div.innerHTML = `
                 <div class="chat-avatar" style="position:relative;">
-                    ${chat.peerName.charAt(0).toUpperCase()}
+                    ${chat.peerAvatar ? `<img src="${chat.peerAvatar}">` : chat.peerName.charAt(0).toUpperCase()}
                     ${isOnline ? '<div class="online-dot"></div>' : ''}
                 </div>
                 <div class="chat-details">
@@ -509,17 +483,22 @@
                     <div class="chat-last-msg">${escapeHtml(chat.lastMessage || 'Новый чат')}</div>
                 </div>
             `;
-            div.onclick = () => openChat(chat.chatId, chat.peerId, chat.peerName);
+            div.onclick = () => openChat(chat.chatId, chat.peerId, chat.peerName, chat.peerAvatar);
             container.appendChild(div);
         }
     }
     
     function updateProfileUI() {
         if (!currentUserData) return;
-        document.getElementById('userName').innerText = currentUserData.name;
+        document.getElementById('userName').innerText = currentUserData.name || 'Пользователь';
         document.getElementById('userBio').innerText = currentUserData.bio || 'Нет описания';
         document.getElementById('userEmail').innerText = currentUser.email;
-        document.getElementById('userAvatar').innerHTML = currentUserData.name.charAt(0).toUpperCase();
+        const avatarDiv = document.getElementById('userAvatar');
+        if (currentUserData.avatarUrl) {
+            avatarDiv.innerHTML = `<img src="${currentUserData.avatarUrl}">`;
+        } else {
+            avatarDiv.innerHTML = currentUserData.name?.charAt(0).toUpperCase() || 'W';
+        }
     }
     
     function showEditProfileModal() {
@@ -528,15 +507,32 @@
         modal.innerHTML = `
             <div class="modal-content">
                 <h2>✏️ Редактировать профиль</h2>
-                <input type="text" id="editName" placeholder="Имя" value="${escapeHtml(currentUserData.name)}">
+                <input type="text" id="editName" placeholder="Имя" value="${escapeHtml(currentUserData.name || '')}">
                 <textarea id="editBio" placeholder="Описание" rows="3">${escapeHtml(currentUserData.bio || '')}</textarea>
+                <div class="avatar-upload">
+                    <div class="avatar-preview" id="avatarPreview">
+                        ${currentUserData.avatarUrl ? `<img src="${currentUserData.avatarUrl}">` : `<span style="font-size:48px;">${currentUserData.name?.charAt(0).toUpperCase() || 'W'}</span>`}
+                    </div>
+                    <label class="file-input-label">📸 Загрузить фото<input type="file" id="avatarUpload" accept="image/*" style="display:none;"></label>
+                </div>
                 <div class="my-id-display"><strong>🆔 Ваш UID:</strong><br>${currentUser.uid}</div>
                 <button id="saveProfileBtn">💾 Сохранить</button>
-                <button id="logoutBtn" style="background:#c42e2e;">🚪 Выйти</button>
+                <button id="logoutBtn" class="danger" style="background:#c42e2e;">🚪 Выйти</button>
                 <button id="closeProfileBtn" class="secondary" style="background:#3a3a3a;">Закрыть</button>
             </div>
         `;
         document.body.appendChild(modal);
+        
+        const fileInput = modal.querySelector('#avatarUpload');
+        const preview = modal.querySelector('#avatarPreview');
+        
+        fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const url = await uploadAvatar(file);
+                preview.innerHTML = `<img src="${url}">`;
+            }
+        };
         
         modal.querySelector('#saveProfileBtn').onclick = async () => {
             const newName = modal.querySelector('#editName').value.trim();
@@ -553,7 +549,6 @@
             await auth.signOut();
             location.reload();
         };
-        
         modal.querySelector('#closeProfileBtn').onclick = () => modal.remove();
     }
     
@@ -563,51 +558,39 @@
         document.getElementById('connectionStatus').innerHTML = '🟢 Онлайн';
         updateProfileUI();
         startPresence();
-        await loadUserChats();
         
-        // Загружаем пользователей в кэш
         const snapshot = await rtdb.ref('users').once('value');
         const users = snapshot.val() || {};
         for (const [uid, data] of Object.entries(users)) {
-            usersCache.set(uid, { name: data.name, email: data.email });
+            usersCache.set(uid, { name: data.name, email: data.email, avatarUrl: data.avatarUrl });
         }
+        await loadUserChats();
         
-        // Обновляем имена в чатах
-        for (const chat of chats) {
-            const peerInfo = usersCache.get(chat.peerId);
-            if (peerInfo) {
-                chat.peerName = peerInfo.name;
-                chat.peerEmail = peerInfo.email;
-            }
-        }
-        renderChatsList();
-        
-        // Настройка поиска
         const searchInput = document.getElementById('searchInput');
         const searchResults = document.createElement('div');
         searchResults.id = 'searchResults';
         searchResults.className = 'search-results';
         searchInput.parentNode.appendChild(searchResults);
-        
         searchInput.addEventListener('input', (e) => renderSearchResults(e.target.value));
         document.getElementById('searchBtn').onclick = () => renderSearchResults(searchInput.value);
     }
     
-    // ==================== СОБЫТИЯ ====================
     function bindEvents() {
         document.getElementById('sendBtn').onclick = sendMessage;
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-            else sendTyping();
-        });
+        document.getElementById('messageInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); else sendTyping(); });
         document.getElementById('userProfileBtn').onclick = showEditProfileModal;
     }
     
-    // ==================== ЗАПУСК ====================
     bindEvents();
-    
     auth.onAuthStateChanged(async (user) => {
         if (user) {
+            if (!user.emailVerified) {
+                alert("⚠️ Подтвердите email! Письмо отправлено повторно.");
+                await user.sendEmailVerification();
+                await auth.signOut();
+                showAuthModal();
+                return;
+            }
             currentUser = user;
             await loadUserData();
             initApp();
