@@ -597,6 +597,15 @@
             margin-left: 8px;
         }
         
+        .success-badge {
+            background: var(--accent-color);
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+        
         ::-webkit-scrollbar {
             width: 5px;
         }
@@ -661,7 +670,7 @@
             </div>
             <div class="call-buttons" id="callButtons">
                 <button class="call-btn" id="audioCallBtn" title="Аудиозвонок">📞</button>
-                <button class="call-btn" id="videoCallBtn" title="Видеозввонок">📹</button>
+                <button class="call-btn" id="videoCallBtn" title="Видеозвонок">📹</button>
                 <button class="call-btn" id="channelSettingsBtn" title="Настройки канала" style="display:none;">⚙️</button>
                 <button class="subscribe-btn" id="subscribeChannelBtn" style="display:none;">📢 Подписаться</button>
             </div>
@@ -836,6 +845,7 @@
                 <div id="loginForm">
                     <input type="email" id="loginEmail" placeholder="Email">
                     <input type="password" id="loginPassword" placeholder="Пароль">
+                    <button id="forgotPasswordBtn" style="background:#3a3a3a; margin-top:5px;">🔑 Забыли пароль?</button>
                     <button id="loginBtn">🔑 Войти</button>
                 </div>
                 <div id="registerForm" style="display:none;">
@@ -869,6 +879,21 @@
             registerForm.style.display = 'block';
         };
         
+        // Забыли пароль
+        modal.querySelector('#forgotPasswordBtn').onclick = async () => {
+            const email = modal.querySelector('#loginEmail').value.trim();
+            if (!email) {
+                alert("Введите email для восстановления");
+                return;
+            }
+            try {
+                await auth.sendPasswordResetEmail(email);
+                alert("✅ Письмо для сброса пароля отправлено! Проверьте почту (включая спам)");
+            } catch (err) {
+                alert("Ошибка: " + err.message);
+            }
+        };
+        
         // Вход
         modal.querySelector('#loginBtn').onclick = async () => {
             const email = modal.querySelector('#loginEmail').value.trim();
@@ -884,7 +909,8 @@
                 currentUser = result.user;
                 
                 if (!currentUser.emailVerified) {
-                    alert("⚠️ Email не подтверждён! Проверьте почту и подтвердите аккаунт.");
+                    alert("⚠️ Email не подтверждён! Проверьте почту (включая спам) и подтвердите аккаунт. Нажмите ОК чтобы отправить письмо повторно.");
+                    await currentUser.sendEmailVerification();
                     await auth.signOut();
                     return;
                 }
@@ -940,7 +966,7 @@
                 };
                 await db.collection('users').doc(currentUser.uid).set(currentUserData);
                 
-                alert("✅ Регистрация успешна! На вашу почту отправлено письмо с подтверждением. Подтвердите email и войдите снова.");
+                alert("✅ Регистрация успешна! На вашу почту отправлено письмо с подтверждением. Подтвердите email и войдите снова.\n\n📧 Проверьте почту (включая папку СПАМ)");
                 await auth.signOut();
                 modal.remove();
             } catch (err) {
@@ -1591,8 +1617,12 @@
         
         if (modal.querySelector('#resendVerifyBtn')) {
             modal.querySelector('#resendVerifyBtn').onclick = async () => {
-                await currentUser.sendEmailVerification();
-                alert("Письмо с подтверждением отправлено! Проверьте почту.");
+                try {
+                    await currentUser.sendEmailVerification();
+                    alert("✅ Письмо с подтверждением отправлено! Проверьте почту (включая папку СПАМ)");
+                } catch (err) {
+                    alert("Ошибка: " + err.message);
+                }
             };
         }
         
@@ -1812,7 +1842,8 @@
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             if (!user.emailVerified) {
-                alert("⚠️ Email не подтверждён! Проверьте почту и подтвердите аккаунт.");
+                alert("⚠️ Email не подтверждён! Проверьте почту (включая папку СПАМ) и подтвердите аккаунт.\n\nНажмите ОК чтобы отправить письмо повторно.");
+                await user.sendEmailVerification();
                 await auth.signOut();
                 showAuthModal();
                 return;
